@@ -3,7 +3,7 @@
 ;;хулігани hooligans
 ;;підлабузники lickspittles
 
-globals [hxcor hycor]
+globals [hxcor hycor sneaks-happy braggarts-happy hooligans-happy lickspittles-happy counted]
 
 breed [humans human]
 humans-own [
@@ -24,6 +24,7 @@ to setup
   clear-all
   set hxcor min-pxcor + 2
   set hycor min-pycor + 2
+  set counted []
   create_sneaks
   create_braggarts
   create_hooligans
@@ -52,6 +53,44 @@ to move-unhappy-humans
        set ticks-stay 0
       ]
       [set ticks-stay ticks-stay + 1]
+      ]
+
+      if (member? who counted) [
+        (ifelse
+          kind = "sneaks" [
+            set sneaks-happy sneaks-happy - 1
+            if (sneaks-happy < 0)
+            [
+             set sneaks-happy 0
+            ]
+         ]
+
+          kind = "braggarts" [
+            set braggarts-happy braggarts-happy - 1
+          if (braggarts-happy < 0)
+          [
+            set braggarts-happy 0
+          ]
+          ]
+
+          kind = "hooligans" [
+            set hooligans-happy hooligans-happy - 1
+          if (hooligans-happy < 0)
+          [
+            set hooligans-happy 0
+          ]
+          ]
+
+          kind = "lickspittles" [
+            set lickspittles-happy lickspittles-happy - 1
+          if (lickspittles-happy < 0)
+          [
+            set lickspittles-happy 0
+          ]
+          ]
+        )
+
+        set counted remove who counted
       ]
     ]
 end
@@ -92,6 +131,8 @@ to update_houses
     let total-nearby (other houses) in-radius radius
     let num-total count total-nearby
 
+    ;show num-total
+
     let sneaks-nearby (other houses) in-radius radius with [kind_live = "sneaks"]
     let num-sneaks count sneaks-nearby
 
@@ -124,6 +165,11 @@ to every_human [x sneaks hooligans braggarts lickspittles total]
         ; позитивно ставляться до хуліганів
         set happy? (sneaks <= sneaks-negative) and
                    (hooligans >= sneaks-hooligans-positive)
+
+        if (happy? and not member? who counted ) [
+          set sneaks-happy sneaks-happy + 1
+          set counted lput who counted
+        ]
       ]
 
       kind = "braggarts" [
@@ -132,6 +178,11 @@ to every_human [x sneaks hooligans braggarts lickspittles total]
         ; позитивно ставляться до підлабузників
         set happy? (braggarts <= braggarts-negative) and
                    (lickspittles >= lickspittles-braggarts-positive)
+
+        if (happy? and not member? who counted) [
+          set braggarts-happy braggarts-happy + 1
+          set counted lput who counted
+        ]
       ]
         ; хулігани
         ; позитивно ставляться один до одного
@@ -139,6 +190,11 @@ to every_human [x sneaks hooligans braggarts lickspittles total]
       kind = "hooligans" [
         set happy? (hooligans >= hooligans-positive) and
                    (sneaks <= hooligans-sneaks-negative)
+
+        if (happy? and not member? who counted) [
+          set hooligans-happy hooligans-happy + 1
+          set counted lput who counted
+        ]
       ]
         ; підлабузники
         ; позивно ставляться один до одного
@@ -146,6 +202,11 @@ to every_human [x sneaks hooligans braggarts lickspittles total]
       kind = "lickspittles" [
         set happy? (lickspittles >= lickspittles-positive) and
                    (braggarts >= braggarts-lickspittles-positive)
+
+        if (happy? and not member? who counted) [
+          set lickspittles-happy lickspittles-happy + 1
+          set counted lput who counted
+        ]
       ]
     )
   ]
@@ -270,7 +331,7 @@ INPUTBOX
 125
 359
 home-capacity
-1.0
+2.0
 1
 0
 Number
@@ -281,7 +342,7 @@ INPUTBOX
 246
 359
 sneaks-live
-16.0
+4.0
 1
 0
 Number
@@ -510,6 +571,27 @@ TEXTBOX
 20
 135.0
 1
+
+PLOT
+909
+21
+1270
+270
+happyness
+time
+pers
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"sneaks" 1.0 0 -817084 true "" "plot (sneaks-happy / sneaks-live) * 100"
+"braggarts" 1.0 0 -1184463 true "" "plot (braggarts-happy / braggarts-live) * 100"
+"hooligans" 1.0 0 -10873583 true "" "plot (hooligans-happy / hooligans-live) * 100"
+"lickspittles" 1.0 0 -2064490 true "" "plot (lickspittles-happy / lickspittles-live) * 100"
 
 @#$#@#$#@
 ## WHAT IS IT?
