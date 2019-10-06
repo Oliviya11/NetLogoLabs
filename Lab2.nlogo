@@ -1,4 +1,4 @@
-globals [cell-size cell-padding-x cell-padding-y not-visited-cells visited-cells]
+globals [cell-size cell-padding-x cell-padding-y live-cells]
 
 breed [walls wall]
 breed [cells cell]
@@ -9,20 +9,27 @@ to setup
   draw-patches
   draw-walls
   draw-cells
-  ;show (random-inclusive-first 0 4)
+  ;show
   reset-ticks
 end
 
 to go
+  let c one-of cells
 
+  ask c [ set color white ]
+  set live-cells live-cells - 1
+
+  let d (random-inclusive-first 0 4)
+  let a (remove-wall c d)
+
+  tick
 end
 
 to init-start-values
   set cell-size 2
-  set not-visited-cells []
-  set visited-cells []
   set cell-padding-x (precision (cell-size / 2 - 0.035) 3)
   set cell-padding-y (precision (cell-size / 2 + 0.02) 3)
+  set live-cells (max-pxcor * max-pycor)
 end
 
 to draw-patches
@@ -80,8 +87,6 @@ to draw-cells
     set color pink
     setxy cur-x cur-y
     set cur-x cur-x + cell-size
-    set not-visited-cells lput who not-visited-cells
-    remove-wall self 0
   ]
 end
 
@@ -89,44 +94,68 @@ to-report random-inclusive-first [ a b ]
   report a + random (b - a)
 end
 
-to remove-wall [c dir]
+to-report remove-wall [ c dir ]
+  if (live-cells = 0) [report 0]
+  let xn 0
+  let yn 0
+
   let x (- cell-padding-x)
   let y (precision (- cell-padding-y + cell-size / 2) 3)
-  ;show y
-
   ask c [
     (ifelse
       dir = 0 [
+        set xn (xcor - cell-size)
+        set yn ycor
+
         set x (precision (x + xcor) 3)
         set y (precision (y + ycor) 3)
       ]
       dir = 1 [
+        set xn (xcor + cell-size)
+        set yn ycor
+
         set x (precision (x + xcor + cell-size) 3)
         set y (precision (y + ycor) 3)
       ]
       dir = 2 [
+        set xn xcor
+        set yn (ycor + cell-size)
+
         set x (precision (x + xcor + cell-size / 2) 3)
         set y (precision (y + ycor + cell-size / 2) 3)
       ]
       dir = 3 [
+        set xn xcor
+        set yn (ycor - cell-size)
+
         set x (precision (x + xcor + cell-size / 2) 3)
         set y (precision (y + ycor - cell-size / 2) 3)
       ]
     )
   ]
 
-  ;show "========"
+  let d ((random-inclusive-first 0 4))
+  let neighC white
 
-  ask walls with [xcor = x and ycor = y] [
-    die
+  let c2 one-of cells with [ xcor = xn and ycor = yn ]
+  ifelse (c2 = nobody) [ report (remove-wall c d) ]
+  [ ask c2 [ set neighC color ] ]
+
+  ifelse (neighC = pink) [
+    ask walls with [xcor = x and ycor = y] [ die ]
+    set live-cells live-cells - 1
+    ask c2 [ set color white ]
+    report (remove-wall c2 d)
   ]
+  [ report (remove-wall c2 d) ]
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-309
-110
+647
+448
 -1
 -1
 13.0
@@ -139,12 +168,12 @@ GRAPHICS-WINDOW
 1
 1
 1
--3
-3
--3
-3
-0
-0
+-16
+16
+-16
+16
+1
+1
 1
 ticks
 30.0
@@ -173,7 +202,7 @@ BUTTON
 74
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
