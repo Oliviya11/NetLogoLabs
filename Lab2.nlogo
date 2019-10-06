@@ -39,11 +39,13 @@ to draw-patches
 end
 
 to draw-walls
-  let walls-num max-pycor * ((2 * max-pxcor / cell-size) + 1)
+  let walls-num-y max-pycor * ((2 * max-pxcor / cell-size) + 1)
+  let walls-num-x max-pxcor * (max-pycor + 1)
+
   let cur-x min-pxcor
   let cur-y min-pycor + cell-size / 2
 
-  create-walls walls-num [
+  create-walls walls-num-y [
     if (cur-x > max-pxcor) [
       set cur-y cur-y + cell-size
       set cur-x min-pxcor
@@ -58,7 +60,7 @@ to draw-walls
 
   set cur-x min-pxcor + cell-size / 2
   set cur-y min-pycor
-  create-walls walls-num [
+  create-walls walls-num-x  [
     if (cur-x > max-pxcor) [
       set cur-y cur-y + cell-size
       set cur-x min-pxcor + cell-size / 2
@@ -73,20 +75,20 @@ to draw-walls
 end
 
 to draw-cells
-  let cur-x (min-pxcor + cell-padding-x)
-  let cur-y (min-pycor + cell-padding-y)
+  let cur-x (precision (min-pxcor + cell-padding-x) 3)
+  let cur-y (precision (min-pycor + cell-padding-y) 3)
   let cell-number (max-pxcor * max-pycor)
 
   create-cells cell-number [
     if (cur-x > max-pxcor) [
-      set cur-y (cur-y + cell-size)
-      set cur-x (min-pxcor + cell-padding-x)
+      set cur-y (precision (cur-y + cell-size) 3)
+      set cur-x (precision (min-pxcor + cell-padding-x) 3)
     ]
     set shape "square"
     set size 2
     set color pink
     setxy cur-x cur-y
-    set cur-x cur-x + cell-size
+    set cur-x (precision (cur-x + cell-size) 3)
   ]
 end
 
@@ -104,29 +106,29 @@ to-report remove-wall [ c dir ]
   ask c [
     (ifelse
       dir = 0 [
-        set xn (xcor - cell-size)
-        set yn ycor
+        set xn (precision (xcor - cell-size) 3)
+        set yn (precision ycor 3)
 
         set x (precision (x + xcor) 3)
         set y (precision (y + ycor) 3)
       ]
       dir = 1 [
-        set xn (xcor + cell-size)
-        set yn ycor
+        set xn (precision (xcor + cell-size) 3)
+        set yn (precision ycor 3)
 
         set x (precision (x + xcor + cell-size) 3)
         set y (precision (y + ycor) 3)
       ]
       dir = 2 [
-        set xn xcor
-        set yn (ycor + cell-size)
+        set xn (precision xcor 3)
+        set yn (precision (ycor + cell-size) 3)
 
         set x (precision (x + xcor + cell-size / 2) 3)
         set y (precision (y + ycor + cell-size / 2) 3)
       ]
       dir = 3 [
-        set xn xcor
-        set yn (ycor - cell-size)
+        set xn (precision xcor 3)
+        set yn (precision (ycor - cell-size) 3)
 
         set x (precision (x + xcor + cell-size / 2) 3)
         set y (precision (y + ycor - cell-size / 2) 3)
@@ -138,7 +140,9 @@ to-report remove-wall [ c dir ]
   let neighC white
 
   let c2 one-of cells with [ xcor = xn and ycor = yn ]
-  ifelse (c2 = nobody) [ report (remove-wall c d) ]
+  ifelse (c2 = nobody) [
+    report (remove-wall c d)
+  ]
   [ ask c2 [ set neighC color ] ]
 
   ifelse (neighC = pink) [
@@ -150,12 +154,43 @@ to-report remove-wall [ c dir ]
   [ report (remove-wall c2 d) ]
 
 end
+
+to show-neigh [ c dir ]
+  let xn 0
+  let yn 0
+
+  ask c [
+    (ifelse
+      dir = 0 [
+        set xn (precision (xcor - cell-size) 3)
+        set yn (precision ycor 3)
+      ]
+      dir = 1 [
+        set xn (precision (xcor + cell-size) 3)
+        set yn (precision ycor 3)
+      ]
+      dir = 2 [
+        set xn (precision xcor 3)
+        set yn (precision (ycor + cell-size) 3)
+      ]
+      dir = 3 [
+        set xn (precision xcor 3)
+        set yn (precision (ycor - cell-size) 3)
+      ]
+    )
+  ]
+
+  let c2 one-of cells with [ xcor = xn and ycor = yn ]
+  if (c2 = nobody) [
+    show 0
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-647
-448
+1063
+422
 -1
 -1
 13.0
@@ -168,10 +203,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-32
+32
+-15
+15
 1
 1
 1
