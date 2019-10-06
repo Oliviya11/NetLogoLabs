@@ -51,7 +51,7 @@ to draw-walls
 
   set cur-x min-pxcor + cell-size / 2
   set cur-y min-pycor
-  create-walls walls-num  [
+  create-walls walls-num [
     if (cur-x > max-pxcor) [
       set cur-y cur-y + cell-size
       set cur-x min-pxcor + cell-size / 2
@@ -69,14 +69,10 @@ to draw-cells
   let cur-x (min-pxcor + cell-padding-x)
   let cur-y (min-pycor + cell-padding-y)
   let cell-number (max-pxcor * max-pycor)
-;  show cur-x
-;  show min-pxcor
-;  show cell-padding-x
 
   create-cells cell-number [
     if (cur-x > max-pxcor) [
       set cur-y (cur-y + cell-size)
-
       set cur-x (min-pxcor + cell-padding-x)
     ]
     set shape "square"
@@ -85,7 +81,7 @@ to draw-cells
     setxy cur-x cur-y
     set cur-x cur-x + cell-size
     set not-visited-cells lput who not-visited-cells
-    remove-wall self 3
+    remove-wall self 0
   ]
 end
 
@@ -95,30 +91,31 @@ end
 
 to remove-wall [c dir]
   let x (- cell-padding-x)
-  let y (- cell-padding-y + cell-size / 2)
+  let y (precision (- cell-padding-y + cell-size / 2) 3)
+  ;show y
 
   ask c [
     (ifelse
       dir = 0 [
-        set x x + (precision xcor 3)
-        set y y + (precision ycor 3)
+        set x (precision (x + xcor) 3)
+        set y (precision (y + ycor) 3)
       ]
       dir = 1 [
-        set x x + (precision xcor 3) + cell-size
-        set y y + (precision ycor 3)
+        set x (precision (x + xcor + cell-size) 3)
+        set y (precision (y + ycor) 3)
       ]
       dir = 2 [
-        set x x + (precision xcor 3) + cell-size / 2
-        set y y + (precision ycor 3) + cell-size / 2
+        set x (precision (x + xcor + cell-size / 2) 3)
+        set y (precision (y + ycor + cell-size / 2) 3)
       ]
       dir = 3 [
-        set x x + (precision xcor 3) + cell-size / 2
-        set y y + (precision ycor 3) - cell-size / 2
+        set x (precision (x + xcor + cell-size / 2) 3)
+        set y (precision (y + ycor - cell-size / 2) 3)
       ]
     )
   ]
 
-  ;show x
+  ;show "========"
 
   ask walls with [xcor = x and ycor = y] [
     die
@@ -128,8 +125,8 @@ end
 GRAPHICS-WINDOW
 210
 10
-335
-136
+309
+110
 -1
 -1
 13.0
@@ -142,10 +139,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--4
-4
--4
-4
+-3
+3
+-3
+3
 0
 0
 1
