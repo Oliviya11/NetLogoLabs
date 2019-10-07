@@ -97,6 +97,7 @@ to-report random-inclusive-first [ a b ]
 end
 
 to-report remove-wall [ c dir ]
+  tick
   if (live-cells = 0) [report 0]
   let xn 0
   let yn 0
@@ -189,8 +190,8 @@ end
 GRAPHICS-WINDOW
 210
 10
-1063
-422
+647
+448
 -1
 -1
 13.0
@@ -203,10 +204,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--32
-32
--15
-15
+-16
+16
+-16
+16
 1
 1
 1
