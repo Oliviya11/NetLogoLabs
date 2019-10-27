@@ -4,7 +4,7 @@ undirected-link-breed [edges edge]
 figures-own [domain possible-steps step-performed? index]
 edges-own [weight]
 
-globals [all-positions x-positions y-positions custom_size figures_index times]
+globals [all-positions x-positions y-positions custom_size figures_index]
 
 to setup
   clear-all
@@ -72,37 +72,37 @@ to setup
   ask figures [
     set label who
   ]
-
-  set times 0
-
 end
 
 to go
   ;show (list (range 8))
-  dfs
+  if (queens > max-x) [
+    set queens max-x
+  ]
+  dfs_queens
 end
 
-to dfs
-;  foreach (range max-x) [
-;    x -> dfs_queens 1 8 (insert-item 0 [] x)
-;  ]
-  if (times < queens) [
-    dfs_queens 1 queens (insert-item 0 [] times)
-    set times (times + 1)
+to dfs_queens
+  foreach (range max-x) [
+    x -> dfs_queens_inner 1 queens (insert-item 0 [] x)
   ]
 end
 
-to dfs_queens [n_col width sol]
+to dfs_queens_inner [n_col width sol]
   ifelse ((length sol) = max-x) [
     ask figures [
-      setxy ((item index sol) + 1) (index + 1)
+      if (index < length sol) [
+        setxy ((item index sol) + 1) (index + 1)
+      ]
     ]
+
+    foreach (range 10) tick
   ]
   [
     foreach (range max-x) [
       n_row ->
       if (ok_queen n_row n_col sol) [
-        dfs_queens (n_col + 1) width (insert-item (length sol) sol n_row)
+        dfs_queens_inner (n_col + 1) width (insert-item (length sol) sol n_row)
       ]
     ]
   ]
@@ -162,11 +162,6 @@ to assign-figures
 end
 
 to move-to-cell [a]
-  let x (item 0 a)
-  let y (item 1 a)
-  show x
-  show y
-  show "==="
   setxy (item 0 a) (item 1 a)
 
 end
@@ -224,7 +219,7 @@ max-x
 max-x
 0
 8
-8.0
+5.0
 1
 1
 NIL
@@ -239,7 +234,7 @@ max-y
 max-y
 0
 8
-8.0
+5.0
 1
 1
 NIL
@@ -271,7 +266,7 @@ queens
 queens
 0
 8
-4.0
+5.0
 1
 1
 NIL
