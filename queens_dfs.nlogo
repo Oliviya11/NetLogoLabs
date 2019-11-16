@@ -4,7 +4,8 @@ undirected-link-breed [edges edge]
 figures-own [domain possible-steps step-performed? index is_knight]
 edges-own [weight]
 
-globals [all-positions x-positions y-positions custom_size figures_index is_queens is_knights sol_queens sol_knights]
+globals [all-positions x-positions y-positions custom_size figures_index is_queens is_knights sol_queens sol_knights
+        knights_x knights_y knights_max]
 
 to setup
   clear-all
@@ -58,16 +59,43 @@ to go
   set sol_queens []
   set sol_knights []
   ;dfs_queens
+  ifelse (max-x > max-y) [
+    set knights_x max-y
+    set knights_y max-x
+  ]
+  [
+    set knights_x max-x
+    set knights_y max-y
+  ]
+
+  let i 0
+  let k 0
+  foreach (range(knights_x)) [
+    if (i > 2) [
+      set i 0
+    ]
+
+    if (i = 0) [
+      set k (k + 1)
+    ]
+
+    set i (i + 1)
+  ]
+
+  set knights_max (k * knights_y)
+
   dfs_knights sol_knights
+
 end
 
 to dfs_knights [sol]
   if (is_knights = false) [
-    ifelse ((length sol) = knights) [
+    let n (length sol)
+    ifelse (n = knights or n = knights_max) [
       set is_knights true
       let num 0
       ask figures [
-        if (is_knight = true) [
+        if (num < n and is_knight = true) [
           let l (item num sol)
           set num (num + 1)
           setxy ((item 0 l) + 1) ((item 1 l) + 1)
@@ -75,9 +103,9 @@ to dfs_knights [sol]
       ]
     ]
     [
-      foreach (range max-x) [
+      foreach (range knights_x) [
         x ->
-        foreach (range max-y) [
+        foreach (range knights_y) [
           y -> if (ok_knight x y sol) [
             let new_item (list x y)
             dfs_knights (insert-item (length sol) sol new_item)
@@ -282,7 +310,7 @@ max-x
 max-x
 0
 8
-6.0
+4.0
 1
 1
 NIL
@@ -297,7 +325,7 @@ max-y
 max-y
 0
 8
-6.0
+8.0
 1
 1
 NIL
@@ -343,7 +371,7 @@ INPUTBOX
 167
 313
 knights
-10.0
+20.0
 1
 0
 Number
@@ -354,7 +382,7 @@ INPUTBOX
 167
 250
 queens
-6.0
+4.0
 1
 0
 Number
