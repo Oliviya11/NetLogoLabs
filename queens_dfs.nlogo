@@ -4,7 +4,7 @@ undirected-link-breed [edges edge]
 figures-own [domain possible-steps step-performed? index]
 edges-own [weight]
 
-globals [all-positions x-positions y-positions custom_size figures_index]
+globals [all-positions x-positions y-positions custom_size figures_index is_queens sol_queens sol_knights]
 
 to setup
   clear-all
@@ -42,6 +42,8 @@ to setup
   ask figures [
     set label who
   ]
+
+  set is_queens false
 end
 
 to go
@@ -49,30 +51,34 @@ to go
   if (queens > max-x) [
     set queens max-x
   ]
+  set sol_queens []
+  set sol_knights []
   dfs_queens
 end
 
 to dfs_queens
   foreach (range max-x) [
-    x -> dfs_queens_inner 1 queens (insert-item 0 [] x)
+    x -> dfs_queens_inner 1 queens (insert-item 0 sol_queens x)
   ]
 end
 
 to dfs_queens_inner [n_col width sol]
-  ifelse ((length sol) = max-x) [
-    ask figures [
-      if (index < length sol) [
-        setxy ((item index sol) + 1) (index + 1)
+  if (is_queens = false) [
+    ifelse ((length sol) = max-x) [
+      set is_queens true
+      ask figures [
+        if (index < length sol) [
+          setxy ((item index sol) + 1) (index + 1)
+        ]
       ]
+      show sol
     ]
-
-    foreach (range 10) tick
-  ]
-  [
-    foreach (range max-x) [
-      n_row ->
-      if (ok_queen n_row n_col sol) [
-        dfs_queens_inner (n_col + 1) width (insert-item (length sol) sol n_row)
+    [
+      foreach (range max-x) [
+        n_row ->
+        if (ok_queen n_row n_col sol) [
+          dfs_queens_inner (n_col + 1) width (insert-item (length sol) sol n_row)
+        ]
       ]
     ]
   ]
@@ -236,7 +242,7 @@ queens
 queens
 0
 8
-5.0
+3.0
 1
 1
 NIL
@@ -251,7 +257,7 @@ knights
 knights
 0
 4
-1.0
+0.0
 1
 1
 NIL
