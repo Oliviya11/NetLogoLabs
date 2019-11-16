@@ -24,21 +24,6 @@ to setup
     set index figures_index
     set figures_index (figures_index + 1)
   ]
-  create-figures kings [
-    setxy 1 0
-    set color white
-    set domain all-positions
-    set shape "chess king"
-    set size custom_size
-  ]
-  create-figures rooks [
-    setxy 2 0
-    set color white
-    set domain all-positions
-    set shape "chess king"
-    set size custom_size
-  ]
-
   create-figures knights [
     setxy 3 0
     set color white
@@ -46,21 +31,6 @@ to setup
     set shape "chess knight"
     set size custom_size
   ]
-   create-figures w-bishops [
-    setxy 4 0
-    set color white
-    set domain all-positions
-    set shape "chess bishop"
-    set size custom_size
-  ]
-   create-figures b-bishops [
-    setxy 5 0
-    set color white
-    set domain all-positions
-    set shape "chess bishop"
-    set size custom_size
-  ]
-
 
   ask figures [
     create-edges-with other figures
@@ -273,75 +243,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-20
-224
-192
-257
-kings
-kings
-0
-4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-21
-264
-193
-297
-rooks
-rooks
-0
-4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-21
-340
-193
-373
+19
+223
+191
+256
 knights
 knights
 0
 4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-21
-302
-193
-335
-b-bishops
-b-bishops
-0
-4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-20
-377
-192
-410
-w-bishops
-w-bishops
-0
-4
-0.0
+1.0
 1
 1
 NIL
