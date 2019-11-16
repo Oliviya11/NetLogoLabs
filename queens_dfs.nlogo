@@ -1,10 +1,10 @@
 breed [figures figure]
 undirected-link-breed [edges edge]
 
-figures-own [domain possible-steps step-performed? index]
+figures-own [domain possible-steps step-performed? index is_knight]
 edges-own [weight]
 
-globals [all-positions x-positions y-positions custom_size figures_index is_queens sol_queens sol_knights]
+globals [all-positions x-positions y-positions custom_size figures_index is_queens is_knights sol_queens sol_knights]
 
 to setup
   clear-all
@@ -12,6 +12,7 @@ to setup
   ask patches[
     set pcolor grey
   ]
+
   set custom_size 1
   set-positions
   draw-board
@@ -23,6 +24,7 @@ to setup
     set size custom_size
     set index figures_index
     set figures_index (figures_index + 1)
+    set is_knight false
   ]
   create-figures knights [
     setxy 3 0
@@ -30,6 +32,7 @@ to setup
     set domain all-positions
     set shape "chess knight"
     set size custom_size
+    set is_knight true
   ]
 
   ask figures [
@@ -44,6 +47,7 @@ to setup
   ]
 
   set is_queens false
+  set is_knights false
 end
 
 to go
@@ -53,7 +57,35 @@ to go
   ]
   set sol_queens []
   set sol_knights []
-  dfs_queens
+  ;dfs_queens
+  dfs_knights sol_knights
+end
+
+to dfs_knights [sol]
+  if (is_knights = false) [
+    ifelse ((length sol) = knights) [
+      set is_knights true
+      let num 0
+      ask figures [
+        if (is_knight = true) [
+          let l (item num sol)
+          set num (num + 1)
+          setxy ((item 0 l) + 1) ((item 1 l) + 1)
+        ]
+      ]
+    ]
+    [
+      foreach (range max-x) [
+        x ->
+        foreach (range max-y) [
+          y -> if (ok_knight x y sol) [
+            let new_item (list x y)
+            dfs_knights (insert-item (length sol) sol new_item)
+          ]
+        ]
+      ]
+    ]
+  ]
 end
 
 to dfs_queens
@@ -90,6 +122,61 @@ to-report ok_queen [new_row new_col sol]
       if ((item col sol) = new_row or abs(col - new_col) = abs(item col sol - new_row)) [
         report false
       ]
+  ]
+
+  report true
+end
+
+
+to-report ok_knight [new_row new_col sol]
+  foreach (range (length sol)) [
+    i -> if (true) [
+      let l (item i sol)
+
+      let low_2 (new_row - 2)
+      let low_1 (new_row - 1)
+      let up_1 (new_row + 1)
+      let up_2 (new_row + 2)
+
+      let left_2 (new_col - 2)
+      let left_1 (new_col - 1)
+      let right_1 (new_col + 1)
+      let right_2 (new_col + 2)
+
+      let low_2_left_1 (low_2 = (item 0 l) and left_1 = (item 1 l))
+      let low_1_left_2 (low_1 = (item 0 l) and left_2 = (item 1 l))
+      let up_1_left_2 (up_1 = (item 0 l) and left_2 = (item 1 l))
+      let up_2_left_1 (up_2 = (item 0 l) and left_1 = (item 1 l))
+
+      let low_2_right_1 (low_2 = (item 0 l) and right_1 = (item 1 l))
+      let low_1_right_2 (low_1 = (item 0 l) and right_2 = (item 1 l))
+      let up_1_right_2 (up_1 = (item 0 l) and right_2 = (item 1 l))
+      let up_2_right_1 (up_2 = (item 0 l) and right_1 = (item 1 l))
+
+      let cell_busy (new_row = (item 0 l) and new_col = (item 1 l))
+
+      if (
+        cell_busy
+        or
+        low_2_left_1
+        or
+        low_1_left_2
+        or
+        up_1_left_2
+        or
+        up_2_left_1
+        or
+        low_2_right_1
+        or
+        low_1_right_2
+        or
+        up_1_right_2
+        or
+        up_2_right_1
+        ) [
+        report false
+      ]
+    ]
   ]
 
   report true
@@ -195,7 +282,7 @@ max-x
 max-x
 0
 8
-5.0
+6.0
 1
 1
 NIL
@@ -210,7 +297,7 @@ max-y
 max-y
 0
 8
-5.0
+6.0
 1
 1
 NIL
@@ -233,36 +320,6 @@ NIL
 NIL
 1
 
-SLIDER
-19
-186
-191
-219
-queens
-queens
-0
-8
-3.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-19
-223
-191
-256
-knights
-knights
-0
-4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
 BUTTON
 23
 72
@@ -279,6 +336,28 @@ NIL
 NIL
 NIL
 1
+
+INPUTBOX
+18
+253
+167
+313
+knights
+10.0
+1
+0
+Number
+
+INPUTBOX
+18
+190
+167
+250
+queens
+6.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
