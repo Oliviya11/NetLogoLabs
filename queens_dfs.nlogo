@@ -98,8 +98,12 @@ to dfs_knights [sol]
         if (num < n and is_knight = true) [
           let l (item num sol)
           set num (num + 1)
-          ifelse (max-x > max-y) [setxy ((item 1 l) + 1) ((item 0 l) + 1)]
-          [setxy ((item 0 l) + 1) ((item 1 l) + 1)]
+          ifelse (max-x > max-y) [
+            setxy ((item 1 l) + 1) ((item 0 l) + 1)
+          ]
+          [
+            setxy ((item 0 l) + 1) ((item 1 l) + 1)
+          ]
         ]
       ]
     ]
@@ -107,9 +111,11 @@ to dfs_knights [sol]
       foreach (range knights_x) [
         x ->
         foreach (range knights_y) [
-          y -> if (ok_knight x y sol) [
-            let new_item (list x y)
-            dfs_knights (insert-item (length sol) sol new_item)
+          y -> if (true) [
+              if (ok_knight x y sol and ok_queen x y sol_queens) [
+                let new_item (list x y)
+                dfs_knights (insert-item (length sol) sol new_item)
+              ]
           ]
         ]
       ]
@@ -118,7 +124,7 @@ to dfs_knights [sol]
 end
 
 to dfs_queens
-  let queens-n 0
+  let queens-n queens
   if (queens-n > min-c) [set queens-n min-c]
   foreach (range max-x) [
     x -> dfs_queens_inner 1 queens-n (insert-item 0 sol_queens x)
@@ -128,7 +134,7 @@ end
 to dfs_queens_inner [n_col width sol]
   if (is_queens = false) [
     let len (length sol)
-    ifelse (len = min-c) [
+    ifelse (len = min-c or len = queens) [
       set is_queens true
       let num 0
       ask figures [
@@ -137,6 +143,7 @@ to dfs_queens_inner [n_col width sol]
           set num (num + 1)
         ]
       ]
+      set sol_queens sol
     ]
     [
       foreach (range max-x) [
@@ -150,11 +157,13 @@ to dfs_queens_inner [n_col width sol]
 end
 
 to-report ok_queen [new_row new_col sol]
-  foreach (range (length sol)) [
-    col ->
-      if ((item col sol) = new_row or abs(col - new_col) = abs(item col sol - new_row)) [
+  if (queens > 0) [
+    foreach (range (length sol)) [
+      col ->
+      if (col = new_col or (item col sol) = new_row or abs(col - new_col) = abs(item col sol - new_row)) [
         report false
       ]
+    ]
   ]
 
   report true
@@ -166,6 +175,13 @@ to-report ok_knight [new_row new_col sol]
     i -> if (true) [
       let l (item i sol)
       if (check-knights new_row new_col (item 0 l) (item 1 l)) [report false]
+    ]
+  ]
+
+  foreach (range length (sol_queens)) [
+    col ->
+    if (true) [
+      if (check-knights new_row new_col (item col sol_queens) col) [report false]
     ]
   ]
 
@@ -360,7 +376,7 @@ INPUTBOX
 167
 313
 knights
-3.0
+5.0
 1
 0
 Number
