@@ -161,54 +161,38 @@ to-report ok_knight [new_row new_col sol]
   foreach (range (length sol)) [
     i -> if (true) [
       let l (item i sol)
-
-      let low_2 (new_row - 2)
-      let low_1 (new_row - 1)
-      let up_1 (new_row + 1)
-      let up_2 (new_row + 2)
-
-      let left_2 (new_col - 2)
-      let left_1 (new_col - 1)
-      let right_1 (new_col + 1)
-      let right_2 (new_col + 2)
-
-      let low_2_left_1 (low_2 = (item 0 l) and left_1 = (item 1 l))
-      let low_1_left_2 (low_1 = (item 0 l) and left_2 = (item 1 l))
-      let up_1_left_2 (up_1 = (item 0 l) and left_2 = (item 1 l))
-      let up_2_left_1 (up_2 = (item 0 l) and left_1 = (item 1 l))
-
-      let low_2_right_1 (low_2 = (item 0 l) and right_1 = (item 1 l))
-      let low_1_right_2 (low_1 = (item 0 l) and right_2 = (item 1 l))
-      let up_1_right_2 (up_1 = (item 0 l) and right_2 = (item 1 l))
-      let up_2_right_1 (up_2 = (item 0 l) and right_1 = (item 1 l))
-
-      let cell_busy (new_row = (item 0 l) and new_col = (item 1 l))
-
-      if (
-        cell_busy
-        or
-        low_2_left_1
-        or
-        low_1_left_2
-        or
-        up_1_left_2
-        or
-        up_2_left_1
-        or
-        low_2_right_1
-        or
-        low_1_right_2
-        or
-        up_1_right_2
-        or
-        up_2_right_1
-        ) [
-        report false
-      ]
+      if (check-knights new_row new_col (item 0 l) (item 1 l)) [report false]
     ]
   ]
 
   report true
+end
+
+to-report check-knights [new_row new_col row col]
+  let low_2 (new_row - 2)
+  let low_1 (new_row - 1)
+  let up_1 (new_row + 1)
+  let up_2 (new_row + 2)
+
+  let left_2 (new_col - 2)
+  let left_1 (new_col - 1)
+  let right_1 (new_col + 1)
+  let right_2 (new_col + 2)
+
+  let low_2_left_1 (low_2 = row and left_1 = col)
+  let low_1_left_2 (low_1 = row and left_2 = col)
+  let up_1_left_2 (up_1 = row and left_2 = col)
+  let up_2_left_1 (up_2 = row and left_1 = col)
+
+  let low_2_right_1 (low_2 = row and right_1 = col)
+  let low_1_right_2 (low_1 = row and right_2 = col)
+  let up_1_right_2 (up_1 = row and right_2 = col)
+  let up_2_right_1 (up_2 = row and right_1 = col)
+
+  let cell_busy (new_row = row and new_col = col)
+
+  report cell_busy  or low_2_left_1 or low_1_left_2 or up_1_left_2 or up_2_left_1 or low_2_right_1 or low_1_right_2 or
+        up_1_right_2 or up_2_right_1
 end
 
 to set-positions
