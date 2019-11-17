@@ -98,7 +98,8 @@ to dfs_knights [sol]
         if (num < n and is_knight = true) [
           let l (item num sol)
           set num (num + 1)
-          setxy ((item 0 l) + 1) ((item 1 l) + 1)
+          ifelse (max-x > max-y) [setxy ((item 1 l) + 1) ((item 0 l) + 1)]
+          [setxy ((item 0 l) + 1) ((item 1 l) + 1)]
         ]
       ]
     ]
