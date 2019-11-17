@@ -92,33 +92,40 @@ to dfs_knights [sol]
   if (is_knights = false) [
     let n (length sol)
     ifelse (n = knights or n = knights_max) [
-      set is_knights true
-      let num 0
-      ask figures [
-        if (num < n and is_knight = true) [
-          let l (item num sol)
-          set num (num + 1)
-          ifelse (max-x > max-y) [
-            setxy ((item 1 l) + 1) ((item 0 l) + 1)
-          ]
-          [
-            setxy ((item 0 l) + 1) ((item 1 l) + 1)
-          ]
-        ]
-      ]
+      assign_knights sol
     ]
     [
+      let i 0
       foreach (range knights_x) [
         x ->
         foreach (range knights_y) [
           y -> if (true) [
-              if (ok_knight x y sol and ok_queen x y sol_queens) [
+              ifelse (ok_knight x y sol and ok_queen x y sol_queens) [
                 let new_item (list x y)
                 dfs_knights (insert-item (length sol) sol new_item)
               ]
+              [
+                 set i (i + 1)
+              ]
           ]
         ]
+        if (i = knights_x * knights_y) [
+          assign_knights sol
+        ]
       ]
+    ]
+  ]
+end
+
+to assign_knights [sol]
+  set is_knights true
+  let num 0
+  ask figures [
+    if (num < (length sol) and is_knight = true) [
+      let l (item num sol)
+      set num (num + 1)
+      ifelse (max-x > max-y) [ setxy ((item 1 l) + 1) ((item 0 l) + 1)]
+      [setxy ((item 0 l) + 1) ((item 1 l) + 1)]
     ]
   ]
 end
