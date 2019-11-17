@@ -84,7 +84,8 @@ to go
 
   set knights_max (k * knights_y)
 
-  dfs_knights sol_knights
+  dfs_queens
+  ;dfs_knights sol_knights
 
 end
 
@@ -128,7 +129,7 @@ to dfs_queens_inner [n_col width sol]
     ifelse ((length sol) = max-x) [
       set is_queens true
       ask figures [
-        if (index < length sol) [
+        if (is_knight = false) [
           setxy ((item index sol) + 1) (index + 1)
         ]
       ]
@@ -295,7 +296,7 @@ max-x
 max-x
 0
 8
-4.0
+5.0
 1
 1
 NIL
@@ -310,7 +311,7 @@ max-y
 max-y
 0
 8
-8.0
+5.0
 1
 1
 NIL
