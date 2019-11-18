@@ -1,6 +1,6 @@
 extensions [table]
 
-globals [all-positions x-positions y-positions custom_size used-figures states]
+globals [all-positions x-positions y-positions custom_size states]
 
 breed [figures figure]
 breed [myagents myagent]
@@ -33,7 +33,6 @@ to setup
   create-queens queens
   create-knights knights
   init-myagents
-  set used-figures 0
   set states ["e" "q" "k"]
 
   ask myagents [send-out-new-value]
@@ -135,6 +134,8 @@ to init-myagents
     set low-neigh []
     set local-view table:make
     set no-goods []
+    set color white
+    setxy (item 0 coord + 1) (item 1 coord + 1)
     set k (k + 1)
   ]
 
@@ -232,9 +233,6 @@ to handle-nogood [nogood]
 end
 
 to-report can-i-be? [val]
-  if (used-figures < queens + knights) [
-    report false
-  ]
   table:put local-view who val
   foreach no-goods [
     [a] ->
@@ -284,22 +282,17 @@ to configure-figure
     set ycor -1
   ]
   ifelse (state = "k" or state = "q") [
-    set used-figures (used-figures + 1)
-    if (used-figures > queens * knights) [
-      set used-figures queens * knights;
-    ]
-
+    set hidden? false
     ifelse (state = "k") [
-        ; place kinight
+       set shape "chess knight"
     ]
     [
-      ; place queen
+       set shape "chess queen"
     ]
 
   ]
   [
-    set used-figures (used-figures - 1)
-    if (used-figures < 0) [ set used-figures 0 ]
+    set hidden? true
   ]
 end
 
