@@ -1,12 +1,12 @@
 extensions [table]
 
-globals [all-positions x-positions y-positions custom_size used-figures]
+globals [all-positions x-positions y-positions custom_size used-figures states]
 
 breed [figures figure]
 breed [myagents myagent]
 undirected-link-breed [edges edge]
 
-figures-own [domain possible-steps step-performed? is_knight]
+figures-own [domain possible-steps step-performed?]
 ; нижчий той, хто має вищий who
 myagents-own [
   coord ; координати до яких підв'язаний агент
@@ -30,23 +30,38 @@ to setup
   set custom_size 1
   set-positions
   draw-board
-  create-figures queens [
+  create-queens queens
+  create-knights knights
+  init-myagents
+  set used-figures 0
+  set states ["e" "q" "k"]
+
+  ask myagents [send-out-new-value]
+end
+
+to create-queens [num]
+  create-figures num [
     setxy 0 0
     set color white
     set domain all-positions
     set shape "chess queen"
     set size custom_size
-    set is_knight false
   ]
+  create-f
+end
+
+to create-knights [num]
   create-figures knights [
     setxy 3 0
     set color white
     set domain all-positions
     set shape "chess knight"
     set size custom_size
-    set is_knight true
   ]
+  create-f
+end
 
+to create-f
   ask figures [
     create-edges-with other figures
   ]
@@ -57,13 +72,21 @@ to setup
   ask figures [
     set label who
   ]
-  init-myagents
-  set used-figures 0
-
-  ask myagents [send-out-new-value]
 end
 
 to go
+  let important-myagents myagents with [not empty? message-queue]
+  ifelse (count important-myagents > 0) [
+    ask important-myagents [handle-message]
+  ][
+;    ifelse (bad-links = 0)[
+;      show "SOLUTION FOUND"
+;    ][
+;
+;    ]
+    show "NO MORE MESSAGES. NO SOLUTION"
+    stop
+  ]
 end
 
 to send-out-new-value
@@ -157,6 +180,132 @@ to-report generate-neigh [c]
   report gen_neigh
 end
 
+to handle-message
+  if not empty? message-queue [
+    let message first message-queue
+    set message-queue but-first message-queue
+    let message-type first message
+    let message-value last message
+
+    ifelse message-type = "ok" [
+      let someone first message-value
+      let val last message-value
+      handle-ok someone val
+    ][
+      ifelse message-type = "nogood" [
+        handle-nogood message-value
+      ][
+        handle-add-neighbor message-value
+      ]
+    ]
+  ]
+end
+
+to handle-ok [someone val]
+  table:put local-view someone val
+  check-local-view
+end
+
+to handle-nogood [nogood]
+  if(not member? nogood no-goods) [
+   set no-goods fput nogood no-goods
+   ;; for each new neighbor
+   foreach (filter [[a] -> not member? (first a) neigh] nogood) [
+      [b] ->
+      let new-neigh (first b)
+      set neigh (normalize-neigh (fput new-neigh neigh))
+      table:put local-view (first b) (last b)
+      let message (list "new-neighbor" who)
+      ask myagent new-neigh [
+        set message-queue lput message message-queue
+      ]
+    ]
+   foreach neigh [
+      [a] ->
+      if (a > who) and (not member? a low-neigh) [
+        set low-neigh (normalize-neigh fput a low-neigh)
+      ]
+   ]
+
+   check-local-view
+  ]
+end
+
+to-report can-i-be? [val]
+  if (used-figures < queens + knights) [
+    report false
+  ]
+  table:put local-view who val
+  foreach no-goods [
+    [a] ->
+    if (violates? a) [
+      table:remove local-view who
+      report false
+    ]
+  ]
+  table:remove local-view who
+  report true
+end
+
+to-report violates? [a]
+  if not (table:has-key? local-view (first a)
+        and (table:get local-view (first a)) = (last a))
+      [report false]
+  report true
+end
+
+to check-local-view
+  if not can-i-be? state [
+    let try-these filter [ [a] -> not (a = state) ] states
+    let can-be-something-else false
+    while [not empty? try-these] [
+      let try-this first try-these
+      set try-these but-first try-these
+
+      if can-i-be? try-this [
+        set try-these [] ;; break loop
+        set state try-this
+        configure-figure
+        set can-be-something-else true
+        send-out-new-value
+      ]
+    ]
+    if not can-be-something-else [
+      backtrack
+    ]
+  ]
+end
+
+to configure-figure
+  let x (item 0 coord)
+  let y (item 1 coord)
+  ask figures with [xcor = x and ycor = y] [
+    set xcor -1
+    set ycor -1
+  ]
+  ifelse (state = "k" or state = "q") [
+    set used-figures (used-figures + 1)
+    if (used-figures > queens * knights) [
+      set used-figures queens * knights;
+    ]
+
+    ifelse (state = "k") [
+        ; place kinight
+    ]
+    [
+      ; place queen
+    ]
+
+  ]
+  [
+    set used-figures (used-figures - 1)
+    if (used-figures < 0) [ set used-figures 0 ]
+  ]
+end
+
+to handle-add-neighbor [someone]
+end
+
 to-report generate-nogood [c]
   let gen_no-goods []
   let cx (item 0 c)
@@ -187,6 +336,30 @@ to-report generate-nogood [c]
   set gen_no-goods (normalize-nogood gen_no-goods)
 
   report gen_no-goods
+end
+
+to backtrack
+  let no-good normalize-nogood find-new-nogood
+  ifelse(not member? no-good no-goods) [
+    if ([] = no-good) [
+      show "EMPTY NO-GOOD FOUND - NO SOLUTION"
+      stop
+    ]
+    set no-goods fput no-good no-goods
+
+    let index []
+
+    foreach no-good [[a] ->
+      set index fput (first a) index]
+
+    ask (myagent max index) [
+      set message-queue lput (list "nogood" no-good) message-queue
+    ]
+  ] [ show "NOGOOD"]
+end
+
+to-report find-new-nogood
+  report table:to-list local-view
 end
 
 to-report normalize-nogood [l]
