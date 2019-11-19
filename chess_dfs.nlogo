@@ -84,6 +84,9 @@ to go
   [set min-c max-x]
 
   dfs_queens
+  if (queens = 0) [
+    dfs_knights [] []
+  ]
 end
 
 to dfs_knights [sol solq]
@@ -137,7 +140,7 @@ to dfs_queens_inner [n_col width sol]
     ifelse (len = min-c or len = queens) [
       ; set is_queens true
       let num 0
-      ask figures [
+      ask figures with [ who > -1 and who < width ] [
         if (num < len and is_knight = false) [
           setxy ((item num sol) + 1) (num + 1)
           set num (num + 1)
@@ -389,7 +392,7 @@ INPUTBOX
 167
 250
 queens
-2.0
+8.0
 1
 0
 Number
