@@ -5,7 +5,7 @@ figures-own [domain possible-steps step-performed? index is_knight]
 edges-own [weight]
 
 globals [all-positions x-positions y-positions custom_size figures_index is_queens is_knights sol_queens sol_knights
-        knights_x knights_y knights_max min-c]
+        knights_max min-c]
 
 to setup
   clear-all
@@ -54,36 +54,13 @@ end
 to go
   set sol_queens []
   set sol_knights []
-  ;dfs_queens
-  ifelse (max-x > max-y) [
-    set knights_x max-y
-    set knights_y max-x
-  ]
-  [
-    set knights_x max-x
-    set knights_y max-y
-  ]
-
-  let i 0
-  let k 0
-  foreach (range(knights_x)) [
-    if (i > 2) [
-      set i 0
-    ]
-
-    if (i = 0) [
-      set k (k + 1)
-    ]
-
-    set i (i + 1)
-  ]
-
-  set knights_max (k * knights_y)
 
   ifelse (max-x > max-y) [set min-c max-y]
   [set min-c max-x]
 
-  dfs_queens
+  if (queens > 0) [
+    dfs_queens
+  ]
   if (queens = 0) [
     dfs_knights [] []
   ]
@@ -95,9 +72,9 @@ to dfs_knights [sol solq]
     assign_knights sol
   ]
   [
-    foreach (range knights_x) [
+    foreach (range max-x) [
         x ->
-        foreach (range knights_y) [
+        foreach (range max-y) [
           y -> if (true) [
               if (ok_knight x y sol solq and ok_queen x y solq) [
                 let new_item (list x y)
@@ -320,7 +297,7 @@ max-x
 max-x
 0
 8
-6.0
+5.0
 1
 1
 NIL
@@ -335,7 +312,7 @@ max-y
 max-y
 0
 8
-6.0
+5.0
 1
 1
 NIL
@@ -381,7 +358,7 @@ INPUTBOX
 167
 313
 knights
-7.0
+12.0
 1
 0
 Number
@@ -392,7 +369,7 @@ INPUTBOX
 167
 250
 queens
-8.0
+0.0
 1
 0
 Number
