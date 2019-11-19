@@ -84,36 +84,26 @@ to go
   [set min-c max-x]
 
   dfs_queens
-  dfs_knights sol_knights
-
 end
 
-to dfs_knights [sol]
+to dfs_knights [sol solq]
   if (is_knights = false) [
-    let n (length sol)
-    ifelse (n = knights or n = knights_max) [
-      assign_knights sol
-    ]
-    [
-      let i 0
-      foreach (range knights_x) [
+  ifelse ((length sol) = knights) [
+    assign_knights sol
+  ]
+  [
+    foreach (range knights_x) [
         x ->
         foreach (range knights_y) [
           y -> if (true) [
-              ifelse (ok_knight x y sol and ok_queen x y sol_queens) [
+              if (ok_knight x y sol solq and ok_queen x y solq) [
                 let new_item (list x y)
-                dfs_knights (insert-item (length sol) sol new_item)
-              ]
-              [
-                 set i (i + 1)
+                dfs_knights (insert-item (length sol) sol new_item) solq
               ]
           ]
         ]
-        if (i = knights_x * knights_y) [
-          assign_knights sol
-        ]
       ]
-    ]
+   ]
   ]
 end
 
@@ -124,8 +114,9 @@ to assign_knights [sol]
     if (num < (length sol) and is_knight = true) [
       let l (item num sol)
       set num (num + 1)
-      ifelse (max-x > max-y) [ setxy ((item 1 l) + 1) ((item 0 l) + 1)]
-      [setxy ((item 0 l) + 1) ((item 1 l) + 1)]
+;      ifelse (max-x > max-y) [ setxy ((item 1 l) + 1) ((item 0 l) + 1)]
+;      [setxy ((item 0 l) + 1) ((item 1 l) + 1)]
+      setxy ((item 0 l) + 1) ((item 1 l) + 1)
     ]
   ]
 end
@@ -133,16 +124,18 @@ end
 to dfs_queens
   let queens-n queens
   if (queens-n > min-c) [set queens-n min-c]
-  foreach (range max-x) [
-    x -> dfs_queens_inner 1 queens-n (insert-item 0 sol_queens x)
+  if (queens-n > 0) [
+    foreach (range max-x) [
+      x -> dfs_queens_inner 1 queens-n (insert-item 0 sol_queens x)
+    ]
   ]
 end
 
 to dfs_queens_inner [n_col width sol]
-  if (is_queens = false) [
+  if (is_knights = false) [
     let len (length sol)
     ifelse (len = min-c or len = queens) [
-      set is_queens true
+      ; set is_queens true
       let num 0
       ask figures [
         if (num < len and is_knight = false) [
@@ -150,7 +143,7 @@ to dfs_queens_inner [n_col width sol]
           set num (num + 1)
         ]
       ]
-      set sol_queens sol
+      dfs_knights [] sol
     ]
     [
       foreach (range max-x) [
@@ -177,7 +170,7 @@ to-report ok_queen [new_row new_col sol]
 end
 
 
-to-report ok_knight [new_row new_col sol]
+to-report ok_knight [new_row new_col sol solq]
   foreach (range (length sol)) [
     i -> if (true) [
       let l (item i sol)
@@ -185,10 +178,12 @@ to-report ok_knight [new_row new_col sol]
     ]
   ]
 
-  foreach (range length (sol_queens)) [
-    col ->
-    if (true) [
-      if (check-knights new_row new_col (item col sol_queens) col) [report false]
+  if (queens > 0) [
+    foreach (range (length solq)) [
+      col ->
+      if (true) [
+        if (check-knights new_row new_col (item col solq) col) [report false]
+      ]
     ]
   ]
 
@@ -383,7 +378,7 @@ INPUTBOX
 167
 313
 knights
-5.0
+7.0
 1
 0
 Number
@@ -394,7 +389,7 @@ INPUTBOX
 167
 250
 queens
-3.0
+2.0
 1
 0
 Number
