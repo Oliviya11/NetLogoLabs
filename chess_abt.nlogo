@@ -111,12 +111,7 @@ to go
   ifelse (count important-figures > 0) [
     ask important-figures [handle-message]
   ][
-;    ifelse (bad-links = 0)[
-;      show "SOLUTION FOUND"
-;    ][
-;
-;    ]
-    show "NO MORE MESSAGES. NO SOLUTION"
+    show "SOLUTION FOUND"
     stop
   ]
 end
@@ -126,7 +121,7 @@ to send-out-new-value
   let i who
   foreach neigh [a ->
     ask figure a [
-      let to-remove get-item-to-remove i
+      let to-remove get-item-to-remove i "ok"
       if (length to-remove > 0) [
         set message-queue remove to-remove message-queue
       ]
@@ -135,8 +130,8 @@ to send-out-new-value
   ]
 end
 
-to-report get-item-to-remove [i]
-  foreach (filter [a -> (first a) = "ok"] message-queue) [
+to-report get-item-to-remove [i msg]
+  foreach (filter [a -> (first a) = msg] message-queue) [
     b -> if (true) [
       let data (last b)
       let id (first data)
@@ -171,55 +166,46 @@ to handle-message
     let message-type first message
     let message-value last message
 
+    let someone first message-value
+    let val last message-value
+
     ifelse message-type = "ok" [
-      let someone first message-value
-      let val last message-value
       handle-ok someone val
     ][
-      ifelse message-type = "nogood" [
-        handle-nogood message-value
-      ][
-        handle-add-neighbor message-value
+      if message-type = "nogood" [
+        handle-nogood someone message-value
       ]
     ]
   ]
 end
 
-to handle-ok [someone val]
-  table:put local-view someone val
+to handle-ok [someone ok]
+  table:put local-view someone ok
   check-local-view
 end
 
-to handle-nogood [nogood]
-  if(not member? nogood no-goods) [
-   set no-goods fput nogood no-goods
-   ;; for each new neighbor
-;   foreach (filter [[a] -> not member? (first a) neigh] nogood) [
-;      [b] ->
-;      let new-neigh (first b)
-;      set neigh (normalize-neigh (fput new-neigh neigh))
-;      table:put local-view (first b) (last b)
-;      let message (list "new-neighbor" who)
-;      ask myagent new-neigh [
-;        set message-queue lput message message-queue
-;      ]
-;    ]
-;   foreach neigh [
-;      [a] ->
-;      if (a > who) and (not member? a low-neigh) [
-;        set low-neigh (normalize-neigh fput a low-neigh)
-;      ]
-;   ]
-
-   check-local-view
+to handle-nogood [someone nogood]
+  let me who
+  foreach (nogood) [
+    a -> if (true) [
+      let id (first a)
+      if ((member? id neigh) = false) [
+        table:put local-view id (last a)
+        ask figure id [
+          if ((member? me neigh) = false) [
+            set neigh lput me neigh
+          ]
+        ]
+      ]
+    ]
   ]
+  check-local-view
 end
 
 to check-local-view
   if ((is-consistent? xcor ycor) = false) [
     if (assign-new-value = false) [
-      show "backtrack"
-      ;backtrack
+      backtrack
     ]
   ]
 end
@@ -291,27 +277,29 @@ to-report violetes? [curr_id x y me-x me-y]
   report res
 end
 
-to handle-add-neighbor [someone]
-end
-
 to backtrack
-;  let no-good normalize-nogood find-new-nogood
-;  ifelse(not member? no-good no-goods) [
-;    if ([] = no-good) [
-;      show "EMPTY NO-GOOD FOUND - NO SOLUTION"
-;      stop
-;    ]
-;    set no-goods fput no-good no-goods
-;
-;    let index []
-;
-;    foreach no-good [[a] ->
-;      set index fput (first a) index]
-;
-;    ask (myagent max index) [
-;      set message-queue lput (list "nogood" no-good) message-queue
-;    ]
-;  ] [ show "NOGOOD"]
+  let no-good normalize-list-2 find-new-nogood
+
+  ifelse([] = no-good) [
+      show "NO SOLUTION"
+      stop
+  ]
+  [
+    let a first no-good
+    set no-good but-first no-good
+
+    let id (first a)
+    table:remove local-view id
+
+    let me who
+    ask figure id [
+      let to-remove get-item-to-remove me "nogood"
+      if (length to-remove > 0) [
+       set message-queue remove to-remove message-queue
+      ]
+      set message-queue lput (list "nogood" me no-good) message-queue
+    ]
+  ]
 end
 
 to-report find-new-nogood
@@ -392,7 +380,7 @@ INPUTBOX
 96
 78
 queens
-2.0
+0.0
 1
 0
 Number
@@ -403,7 +391,7 @@ INPUTBOX
 191
 78
 knights
-2.0
+8.0
 1
 0
 Number
@@ -414,7 +402,7 @@ INPUTBOX
 94
 147
 max-x
-6.0
+4.0
 1
 0
 Number
@@ -425,7 +413,7 @@ INPUTBOX
 189
 147
 max-y
-6.0
+4.0
 1
 0
 Number
@@ -454,7 +442,7 @@ BUTTON
 186
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
