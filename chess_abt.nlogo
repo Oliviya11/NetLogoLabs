@@ -1,22 +1,22 @@
 extensions [table]
 
-globals [all-positions x-positions y-positions custom_size states]
+globals [all-positions x-positions y-positions custom_size states coords-domain]
 
 breed [figures figure]
-breed [myagents myagent]
 undirected-link-breed [edges edge]
 
-figures-own [domain possible-steps step-performed?]
 ; нижчий той, хто має вищий who
-myagents-own [
-  coord ; координати до яких підв'язаний агент
-  state ; поточний стан агента. e - empty, q - queen, k - knight
+figures-own [
+  domain
+  possible-steps
+  step-performed?
   message-queue  ; список вхідних повідомлень у форматі [тип-повідомлення текст-повідомлення]
-  low-neigh ; список сусідів з меншим пріоритетом
-  neigh ; розширений список сусідів
+  neigh ; сусіди
   local-view ; відображення виду (номер-агента - стан)
   no-goods ; список пар (агент  стан), які є обмеженнямиno-goods
+  is-knight? ; чи це кінь?
 ]
+
 edges-own [weight]
 
 to setup
@@ -32,10 +32,39 @@ to setup
   draw-board
   create-queens queens
   create-knights knights
-  init-myagents
-  set states ["e" "q" "k"]
+  assign-figures-on-start
+end
 
-  ask myagents [send-out-new-value]
+to assign-figures-on-start
+  set coords-domain []
+
+  foreach (range(max-x)) [
+    x ->
+    foreach (range(max-y)) [
+      y -> set coords-domain lput (list (x + 1) (y + 1)) coords-domain
+    ]
+  ]
+
+  let i 0
+  ask figures [
+    let coord (item i coords-domain)
+    setxy (item 0 coord) (item 1 coord)
+    set i (i + 1)
+    set neigh (generate-low-priority-neighs who)
+  ]
+
+  ask figures [send-out-new-value]
+end
+
+to-report generate-low-priority-neighs [curr-who]
+  let gen-neighs []
+  ask figures [
+    if (who > curr-who) [
+      set gen-neighs lput who gen-neighs
+    ]
+  ]
+  set gen-neighs (normalize-list gen-neighs)
+  report gen-neighs
 end
 
 to create-queens [num]
@@ -45,6 +74,7 @@ to create-queens [num]
     set domain all-positions
     set shape "chess queen"
     set size custom_size
+    set is-knight? false
   ]
   create-f
 end
@@ -56,6 +86,7 @@ to create-knights [num]
     set domain all-positions
     set shape "chess knight"
     set size custom_size
+    set is-knight? true
   ]
   create-f
 end
@@ -70,13 +101,15 @@ to create-f
   ]
   ask figures [
     set label who
+    set message-queue []
+    set local-view table:make
   ]
 end
 
 to go
-  let important-myagents myagents with [not empty? message-queue]
-  ifelse (count important-myagents > 0) [
-    ask important-myagents [handle-message]
+  let important-figures figures with [not empty? message-queue]
+  ifelse (count important-figures > 0) [
+    ask important-figures [handle-message]
   ][
 ;    ifelse (bad-links = 0)[
 ;      show "SOLUTION FOUND"
@@ -89,13 +122,31 @@ to go
 end
 
 to send-out-new-value
-  let my-message list "ok" (list who state)
+  let my-message list "ok" (list who (list xcor ycor))
   let i who
-  foreach low-neigh [a ->
-    ask myagent a [
+  foreach neigh [a ->
+    ask figure a [
+      let to-remove get-item-to-remove i
+      if (length to-remove > 0) [
+        set message-queue remove to-remove message-queue
+      ]
       set message-queue (lput my-message message-queue)
     ]
   ]
+end
+
+to-report get-item-to-remove [i]
+  foreach (filter [a -> (first a) = "ok"] message-queue) [
+    b -> if (true) [
+      let data (last b)
+      let id (first data)
+      if (id = i) [
+        report b
+      ]
+    ]
+  ]
+
+  report []
 end
 
 to set-positions
@@ -112,79 +163,11 @@ to set-positions
   ]
 end
 
-to init-myagents
-  let myagents-num (max-x * max-y)
-  let coords []
-
-  foreach (range (max-x)) [
-    x ->
-    foreach (range(max-y)) [
-      y -> set coords lput (list x y) coords
-    ]
-  ]
-
-  let k 0
-
-  create-myagents myagents-num [
-    set hidden? true
-    set coord (item k coords)
-    set state "e"
-    set message-queue []
-    set neigh []
-    set low-neigh []
-    set local-view table:make
-    set no-goods []
-    set color white
-    setxy (item 0 coord + 1) (item 1 coord + 1)
-    set k (k + 1)
-  ]
-
-  ask myagents [
-    set neigh (generate-neigh coord)
-    let i who
-    foreach neigh [
-     a ->
-     if (a > i) [
-       set low-neigh fput a low-neigh
-     ]
-    ]
-    set no-goods (generate-nogood coord)
-    set neigh (normalize-neigh neigh)
-    set low-neigh (normalize-neigh low-neigh)
-  ]
-end
-
-to-report generate-neigh [c]
-  let gen_neigh []
-  let cx (item 0 c)
-  let cy (item 1 c)
-
-  ask myagents [
-    let x (item 0 coord)
-    let y (item 1 coord)
-
-    ifelse (cx =  x and cy = y)
-    [
-      ; it's me
-    ]
-    [
-        if (cx = x or cy = y or abs(x - cx) = abs(y - cy)
-        or (cx = x - 2 and cy = y - 1) or (cx = x - 2 and cy = y + 1)
-        or (cx = x - 1 and cy = y - 2) or (cx = x - 1 and cy = y + 2)
-        or (cx = x + 1 and cy = y - 2) or (cx = x + 1 and cy = y + 2)
-        or (cx = x + 2 and cy = y - 1) or (cx = x + 2 and cy = y + 1)) [
-          set gen_neigh lput (who) gen_neigh ; (list who coord)
-        ]
-    ]
-  ]
-
-  report gen_neigh
-end
-
 to handle-message
   if not empty? message-queue [
     let message first message-queue
     set message-queue but-first message-queue
+
     let message-type first message
     let message-value last message
 
@@ -211,157 +194,137 @@ to handle-nogood [nogood]
   if(not member? nogood no-goods) [
    set no-goods fput nogood no-goods
    ;; for each new neighbor
-   foreach (filter [[a] -> not member? (first a) neigh] nogood) [
-      [b] ->
-      let new-neigh (first b)
-      set neigh (normalize-neigh (fput new-neigh neigh))
-      table:put local-view (first b) (last b)
-      let message (list "new-neighbor" who)
-      ask myagent new-neigh [
-        set message-queue lput message message-queue
-      ]
-    ]
-   foreach neigh [
-      [a] ->
-      if (a > who) and (not member? a low-neigh) [
-        set low-neigh (normalize-neigh fput a low-neigh)
-      ]
-   ]
+;   foreach (filter [[a] -> not member? (first a) neigh] nogood) [
+;      [b] ->
+;      let new-neigh (first b)
+;      set neigh (normalize-neigh (fput new-neigh neigh))
+;      table:put local-view (first b) (last b)
+;      let message (list "new-neighbor" who)
+;      ask myagent new-neigh [
+;        set message-queue lput message message-queue
+;      ]
+;    ]
+;   foreach neigh [
+;      [a] ->
+;      if (a > who) and (not member? a low-neigh) [
+;        set low-neigh (normalize-neigh fput a low-neigh)
+;      ]
+;   ]
 
    check-local-view
   ]
 end
 
-to-report can-i-be? [val]
-  table:put local-view who val
-  foreach no-goods [
-    [a] ->
-    if (violates? a) [
-      table:remove local-view who
-      report false
+to check-local-view
+  if ((is-consistent? xcor ycor) = false) [
+    if (assign-new-value = false) [
+      show "backtrack"
+      ;backtrack
     ]
   ]
-  table:remove local-view who
-  report true
 end
 
-to-report violates? [a]
-  if not (table:has-key? local-view (first a)
-        and (table:get local-view (first a)) = (last a))
-      [report false]
-  report true
-end
-
-to check-local-view
-  if not can-i-be? state [
-    let try-these filter [ [a] -> not (a = state) ] states
-    let can-be-something-else false
-    while [not empty? try-these] [
-      let try-this first try-these
-      set try-these but-first try-these
-
-      if can-i-be? try-this [
-        set try-these [] ;; break loop
-        set state try-this
-        configure-figure
-        set can-be-something-else true
+to-report assign-new-value
+  foreach (coords-domain) [
+    a -> if (true) [
+     let x (first a)
+     let y (last a)
+     ifelse (x = xcor and y = ycor) [
+          ; it's me
+     ]
+     [
+       if (is-consistent? x y) [
+        setxy x y
         send-out-new-value
+        report true
+       ]
+      ]
+     ]
+   ]
+  report false
+end
+
+to-report is-consistent? [me-x me-y]
+  let local-view-list table:to-list local-view
+  foreach (local-view-list) [
+    a -> if (true) [
+      let curr_id (first a)
+      let coord (last a)
+      let x (first coord)
+      let y (last coord)
+      if (violetes? curr_id x y me-x me-y) [
+        report false
       ]
     ]
-    if not can-be-something-else [
-      backtrack
-    ]
   ]
+
+  report true
 end
 
-to configure-figure
-  let x (item 0 coord)
-  let y (item 1 coord)
-  ask figures with [xcor = x and ycor = y] [
-    set xcor -1
-    set ycor -1
-  ]
-  ifelse (state = "k" or state = "q") [
-    set hidden? false
-    ifelse (state = "k") [
-       set shape "chess knight"
-    ]
-    [
-       set shape "chess queen"
+to-report violetes? [curr_id x y me-x me-y]
+  let res false
+
+  ask figure curr_id [
+    ; two figures on the same cell
+    if (me-x = x and me-y = y) [
+      set res true
     ]
 
+    ifelse (is-knight?)
+    [
+      ; knight attack figure
+      if ((x = me-x - 2 and y = me-y - 1) or (x = me-x - 2 and y = me-y + 1)
+      or (x = me-x - 1 and y = me-y - 2) or (x = me-x - 1 and y = me-y + 2)
+      or (x = me-x + 1 and y = me-y - 2) or (x = me-x + 1 and y = me-y + 2)
+      or (x = me-x + 2 and y = me-y - 1) or (x = me-x + 2 and y = me-y + 1)) [
+        set res true
+      ]
+    ]
+    [
+      ; queen attack figure
+      if (x = me-x or y = me-y or abs(me-x - x) = abs(me-y - y)) [
+        set res true
+      ]
+    ]
   ]
-  [
-    set hidden? true
-  ]
+
+  report res
 end
 
 to handle-add-neighbor [someone]
 end
 
-to-report generate-nogood [c]
-  let gen_no-goods []
-  let cx (item 0 c)
-  let cy (item 1 c)
-
-  ask myagents [
-    let x (item 0 coord)
-    let y (item 1 coord)
-
-    ifelse (cx =  x and cy = y)
-    [
-      ; it's me
-    ]
-    [
-      if (cx = x or cy = y or abs(x - cx) = abs(y - cy)) [
-        set gen_no-goods lput (list who "q") gen_no-goods
-      ]
-
-      if ((cx = x - 2 and cy = y - 1) or (cx = x - 2 and cy = y + 1)
-      or (cx = x - 1 and cy = y - 2) or (cx = x - 1 and cy = y + 2)
-      or (cx = x + 1 and cy = y - 2) or (cx = x + 1 and cy = y + 2)
-      or (cx = x + 2 and cy = y - 1) or (cx = x + 2 and cy = y + 1)) [
-        set gen_no-goods lput (list who " k") gen_no-goods
-      ]
-    ]
-  ]
-
-  set gen_no-goods (normalize-nogood gen_no-goods)
-
-  report gen_no-goods
-end
-
 to backtrack
-  let no-good normalize-nogood find-new-nogood
-  ifelse(not member? no-good no-goods) [
-    if ([] = no-good) [
-      show "EMPTY NO-GOOD FOUND - NO SOLUTION"
-      stop
-    ]
-    set no-goods fput no-good no-goods
-
-    let index []
-
-    foreach no-good [[a] ->
-      set index fput (first a) index]
-
-    ask (myagent max index) [
-      set message-queue lput (list "nogood" no-good) message-queue
-    ]
-  ] [ show "NOGOOD"]
+;  let no-good normalize-nogood find-new-nogood
+;  ifelse(not member? no-good no-goods) [
+;    if ([] = no-good) [
+;      show "EMPTY NO-GOOD FOUND - NO SOLUTION"
+;      stop
+;    ]
+;    set no-goods fput no-good no-goods
+;
+;    let index []
+;
+;    foreach no-good [[a] ->
+;      set index fput (first a) index]
+;
+;    ask (myagent max index) [
+;      set message-queue lput (list "nogood" no-good) message-queue
+;    ]
+;  ] [ show "NOGOOD"]
 end
 
 to-report find-new-nogood
   report table:to-list local-view
 end
 
-to-report normalize-nogood [l]
+to-report normalize-list-2 [l]
   ;; Сортування обмежень для виключення дублікатів
   report sort-by [ [a b] -> (first a) > (first b) ] l
 end
 
-to-report normalize-neigh [l]
-  report sort-by [ [a b] -> a > b ] l
+to-report normalize-list [l]
+  report sort-by [ [a b] -> a < b ] l
 end
 
 to draw-board
@@ -381,20 +344,20 @@ to draw-board
 
 end
 
-to assign-figures
-  ask figures [
-    let assignment one-of domain
-    while [count turtles-on patch (item 0 assignment) (item 1 assignment) >= 1]
-    [
-       set assignment one-of domain
-    ]
-    move-to-cell assignment
-  ]
-end
-
-to move-to-cell [a]
-  setxy (item 0 a) (item 1 a)
-end
+;to assign-figures
+;  ask figures [
+;    let assignment one-of domain
+;    while [count turtles-on patch (item 0 assignment) (item 1 assignment) >= 1]
+;    [
+;       set assignment one-of domain
+;    ]
+;    move-to-cell assignment
+;  ]
+;end
+;
+;to move-to-cell [a]
+;  setxy (item 0 a) (item 1 a)
+;end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -451,7 +414,7 @@ INPUTBOX
 94
 147
 max-x
-4.0
+6.0
 1
 0
 Number
@@ -462,7 +425,7 @@ INPUTBOX
 189
 147
 max-y
-4.0
+6.0
 1
 0
 Number
@@ -491,23 +454,6 @@ BUTTON
 186
 NIL
 go
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-5
-190
-128
-223
-NIL
-assign-figures
 NIL
 1
 T
