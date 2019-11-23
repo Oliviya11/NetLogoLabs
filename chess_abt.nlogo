@@ -252,7 +252,7 @@ to-report is-consistent? [me-x me-y]
       let coord (last a)
       let x (first coord)
       let y (last coord)
-      if (violetes? curr_id x y me-x me-y) [
+      if ((violetes? curr_id x y me-x me-y) or (violetes? who me-x me-y x y)) [
         report false
       ]
     ]
