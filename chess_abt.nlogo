@@ -1,6 +1,6 @@
 extensions [table]
 
-globals [all-positions x-positions y-positions custom_size states coords-domain]
+globals [all-positions x-positions y-positions custom_size states coords-domain nogoods]
 
 breed [figures figure]
 undirected-link-breed [edges edge]
@@ -13,8 +13,8 @@ figures-own [
   message-queue  ; список вхідних повідомлень у форматі [тип-повідомлення текст-повідомлення]
   neigh ; сусіди
   local-view ; відображення виду (номер-агента - стан)
-  no-goods ; список пар (агент  стан), які є обмеженнямиno-goods
   is-knight? ; чи це кінь?
+  new-constraints
 ]
 
 edges-own [weight]
@@ -103,6 +103,7 @@ to create-f
     set label who
     set message-queue []
     set local-view table:make
+    set new-constraints []
   ]
 end
 
@@ -185,27 +186,19 @@ to handle-ok [someone ok]
 end
 
 to handle-nogood [someone nogood]
-  let me who
-  foreach (nogood) [
-    a -> if (true) [
-      let id (first a)
-      if ((member? id neigh) = false) [
-        table:put local-view id (last a)
-        ask figure id [
-          if ((member? me neigh) = false) [
-            set neigh lput me neigh
-          ]
-        ]
-      ]
-    ]
+  let coord (last nogood)
+  if (not member? coord new-constraints) [
+    set new-constraints lput (coord) new-constraints
   ]
   check-local-view
 end
 
 to check-local-view
   if ((is-consistent? xcor ycor) = false) [
-    if (assign-new-value = false) [
+    ifelse (assign-new-value = false) [
       backtrack
+    ] [
+      set new-constraints []
     ]
   ]
 end
@@ -231,6 +224,7 @@ to-report assign-new-value
 end
 
 to-report is-consistent? [me-x me-y]
+  if (member? (list me-x me-y) new-constraints) [ report false ]
   let local-view-list table:to-list local-view
   foreach (local-view-list) [
     a -> if (true) [
@@ -286,19 +280,28 @@ to backtrack
   ]
   [
     let a first no-good
-    set no-good but-first no-good
-
-    let id (first a)
-    table:remove local-view id
-
+    ;set no-good but-first no-good
     let me who
-    ask figure id [
-      let to-remove get-item-to-remove me "nogood"
-      if (length to-remove > 0) [
-       set message-queue remove to-remove message-queue
+    foreach (no-good) [
+      x -> if (true) [
+        let id (first x)
+        ask figure id [
+          let to-remove get-item-to-remove me "nogood"
+          if (length to-remove > 0) [
+            set message-queue remove to-remove message-queue
+          ]
+          set message-queue lput (list "nogood" me x) message-queue
+        ]
+        table:remove local-view id
       ]
-      set message-queue lput (list "nogood" me no-good) message-queue
     ]
+
+    let coord (list xcor ycor)
+    if (not member? coord new-constraints) [
+      set new-constraints lput (coord) new-constraints
+    ]
+
+    check-local-view
   ]
 end
 
@@ -365,7 +368,7 @@ INPUTBOX
 96
 78
 queens
-4.0
+8.0
 1
 0
 Number
@@ -387,7 +390,7 @@ INPUTBOX
 94
 147
 max-x
-4.0
+8.0
 1
 0
 Number
@@ -398,7 +401,7 @@ INPUTBOX
 189
 147
 max-y
-4.0
+8.0
 1
 0
 Number
