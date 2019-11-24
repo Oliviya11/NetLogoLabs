@@ -331,21 +331,6 @@ to draw-board
   ]
 
 end
-
-;to assign-figures
-;  ask figures [
-;    let assignment one-of domain
-;    while [count turtles-on patch (item 0 assignment) (item 1 assignment) >= 1]
-;    [
-;       set assignment one-of domain
-;    ]
-;    move-to-cell assignment
-;  ]
-;end
-;
-;to move-to-cell [a]
-;  setxy (item 0 a) (item 1 a)
-;end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -380,7 +365,7 @@ INPUTBOX
 96
 78
 queens
-0.0
+4.0
 1
 0
 Number
@@ -391,7 +376,7 @@ INPUTBOX
 191
 78
 knights
-8.0
+0.0
 1
 0
 Number
